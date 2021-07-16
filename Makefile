@@ -1,35 +1,34 @@
 APP_NAME ?= stack_test
-OUT ?= out/$(APP_NAME)
-TAR ?= run
+OUT ?= out
+TAR ?= out/$(APP_NAME)
 
-Q := #@
+Q := @
 MD := $(Q)mkdir -p
 RM := $(Q)rm -rf
-CC := gcc
+CC := $(Q)gcc
 
-SRCS += $(wildcard $(abspath source/*.c))
-INCS += $(wildcard $(abspath include))
+SRCS += $(wildcard source/*.c)
+INCS += $(wildcard include)
 
-SRCS += $(wildcard $(abspath app/$(APP_NAME))/*.c)
-INCS += $(wildcard $(abspath app/$(APP_NAME)))
+SRCS += $(wildcard app/$(APP_NAME)/*.c)
+INCS += $(wildcard app/$(APP_NAME))
 
 CFLAGS += -g
-CFLAGS += -O0
+CFLAGS += -Os
 CFLAGS += -Wall
 
-SRCS := $(subst $(abspath $(CURDIR))/,,$(SRCS))
-INCS := $(subst $(abspath $(CURDIR))/,,$(INCS))
 OBJS := $(SRCS:%.c=$(OUT)/%.o)
 
 default: run
 
 $(OUT)/%.o: %.c
+	@echo "Compiling $<..."
 	$(MD) $(dir $@)
-	$(CC) $(CFLAGS) $(INCS:%=-I%) -c -o $@ $<
+	$(CC) $(CFLAGS) $(INCS:%=-I%) -MMD -MD -MF $(@:%.o=%.d) -c -o $@ $<
 
 $(OUT)/$(TAR): $(OBJS)
 	$(MD) $(dir $@)
-	$(CC) $(CFLAGS) $(INCS:%=-I%) -o $@ $?
+	$(CC) $(CFLAGS) $(INCS:%=-I%) -Wl,-Map $@.map -o $@ $?
 
 build: $(OUT)/$(TAR)
 
@@ -40,7 +39,5 @@ clean:
 clean-build: clean build
 
 run: $(OUT)/$(TAR)
-	@echo
-	@echo "[RUN $(APP_NAME)]"
-	@echo
+	@echo "[$(APP_NAME)]"
 	@./$(OUT)/$(TAR)
